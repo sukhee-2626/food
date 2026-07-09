@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniBite | Home</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <div class="main-content">
+      <header class="mb-md">
+        <h1 class="text-title">UniBite</h1>
+        <p class="text-subtitle">What are you craving today?</p>
+      </header>
+
+      <section class="mt-lg">
+        <h2 class="text-body mb-md">Campus Canteens</h2>
+        <div id="shops-container" class="flex-col gap-md">
+          <!-- Shops will be injected here via JS -->
+        </div>
+      </section>
+    </div>
+
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav-item active">
+        <span>🏠</span>
+        <span>Home</span>
+      </a>
+      <a href="cart.html" class="bottom-nav-item">
+        <span>🛒</span>
+        <span>Cart</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const container = document.getElementById('shops-container');
+      
+      MOCK_SHOPS.forEach(shop => {
+        const card = document.createElement('a');
+        card.href = `shop.html?id=${shop.id}`;
+        card.className = 'card animate-fade-in';
+        
+        const statusBadge = shop.isOpen 
+          ? `<span class="badge success">Open</span>` 
+          : `<span class="badge warning">Closed</span>`;
+          
+        const waitTimeHtml = shop.isOpen 
+          ? `<div class="flex-row gap-sm"><span class="text-small">Wait time:</span><span class="badge warning animate-pulse">~${shop.estimatedWaitTime} min</span></div>`
+          : ``;
+
+        card.innerHTML = `
+          <div class="flex-row justify-between mb-md">
+            <div>
+              <h3 class="text-body">${shop.name}</h3>
+              <p class="text-small">${shop.type}</p>
+            </div>
+            ${statusBadge}
+          </div>
+          <div class="flex-row justify-between align-center">
+            <p class="text-small text-secondary">★ ${shop.rating.toFixed(1)}</p>
+            ${waitTimeHtml}
+          </div>
+        `;
+        
+        container.appendChild(card);
+      });
+    });
+  </script>
+</body>
+</html>

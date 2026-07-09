@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniBite | Shop Menu</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <div class="main-content animate-fade-in" id="content">
+      <div class="p-md"><p>Loading shop...</p></div>
+    </div>
+    
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav-item">
+        <span>🏠</span>
+        <span>Home</span>
+      </a>
+      <a href="cart.html" class="bottom-nav-item">
+        <span>🛒</span>
+        <span>Cart</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const shopId = urlParams.get('id');
+      const shop = getShopById(shopId);
+      const content = document.getElementById('content');
+
+      if (!shop) {
+        content.innerHTML = `<div class="p-md"><p>Shop not found.</p><a href="index.html" class="btn-secondary mt-md">Back to Home</a></div>`;
+        return;
+      }
+
+      const menuItems = getMenuItemsByShopId(shopId);
+      
+      const waitTimeHtml = shop.isOpen 
+        ? `<span class="badge warning">Wait: ~${shop.estimatedWaitTime} min</span>` 
+        : ``;
+
+      let menuHtml = menuItems.map(item => `
+        <div class="card flex-row justify-between align-center">
+          <div>
+            <div class="flex-row gap-sm align-center">
+              <span class="badge ${item.isVeg ? 'success' : 'warning'}" style="padding: 2px 6px; font-size: 0.6rem;">
+                ${item.isVeg ? "VEG" : "NON-VEG"}
+              </span>
+              <h3 class="text-body">${item.name}</h3>
+            </div>
+            <p class="text-small text-secondary mt-sm">${item.description}</p>
+            <p class="font-bold mt-sm">₹${item.price}</p>
+          </div>
+          <button class="btn-primary" style="padding: 8px 16px; border-radius: 8px;" onclick="addToCart('${item.id}')">
+            ADD
+          </button>
+        </div>
+      `).join('');
+
+      content.innerHTML = `
+        <header class="mb-lg">
+          <a href="index.html" class="text-small mb-md inline-block">← Back to Campus</a>
+          <div class="flex-row justify-between align-center mt-md">
+            <div>
+              <h1 class="text-title">${shop.name}</h1>
+              <p class="text-subtitle">${shop.type}</p>
+            </div>
+            ${waitTimeHtml}
+          </div>
+          <p class="text-body mt-md text-secondary">${shop.description}</p>
+        </header>
+
+        <section>
+          <h2 class="text-body mb-md">Menu</h2>
+          <div class="flex-col gap-sm">
+            ${menuHtml}
+          </div>
+        </section>
+      `;
+    });
+
+    // Global function for the inline onclick handler
+    window.addToCart = function(itemId) {
+      const item = MOCK_MENU_ITEMS.find(m => m.id === itemId);
+      if (item) {
+        cartManager.addToCart(item);
+      }
+    };
+  </script>
+</body>
+</html>

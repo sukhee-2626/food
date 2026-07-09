@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniBite | Cart</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container" id="app-root">
+    <!-- Content injected via JS -->
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderCart();
+    });
+
+    function renderCart() {
+      const appRoot = document.getElementById('app-root');
+      const items = cartManager.getCart();
+      const total = cartManager.getTotal();
+      const user = MOCK_USER;
+      const platformFee = 5;
+      const finalTotal = total + platformFee;
+
+      if (items.length === 0) {
+        appRoot.innerHTML = `
+          <div class="main-content animate-fade-in">
+            <header class="mb-lg"><h1 class="text-title">Your Cart</h1></header>
+            <div class="flex-col align-center mt-lg text-secondary">
+              <p>Your cart is empty.</p>
+              <a href="index.html" class="btn-secondary mt-md">Browse Shops</a>
+            </div>
+          </div>
+          ${getNavHtml()}
+        `;
+        return;
+      }
+
+      let itemsHtml = items.map(item => `
+        <div class="card flex-row justify-between align-center mb-sm">
+          <div>
+            <h3 class="text-body">${item.menuItem.name}</h3>
+            <p class="text-small text-secondary">Qty: ${item.quantity} × ₹${item.menuItem.price}</p>
+          </div>
+          <div class="flex-row gap-sm align-center">
+            <p class="font-bold">₹${item.menuItem.price * item.quantity}</p>
+            <button onclick="removeItem('${item.menuItem.id}')" class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 8px; color: var(--accent-color); border-color: var(--accent-color);">-</button>
+          </div>
+        </div>
+      `).join('');
+
+      const balanceBadge = user.walletBalance >= finalTotal 
+        ? `<span class="badge success">Sufficient</span>` 
+        : `<span class="badge warning">Low Balance</span>`;
+
+      appRoot.innerHTML = `
+        <div class="main-content animate-fade-in">
+          <header class="mb-lg"><h1 class="text-title">Your Cart</h1></header>
+          
+          <div class="flex-col gap-sm">
+            ${itemsHtml}
+          </div>
+
+          <div class="card mt-lg bg-secondary">
+            <h3 class="text-body mb-md">Payment Details</h3>
+            <div class="flex-row justify-between mb-sm">
+              <span class="text-secondary">Item Total</span>
+              <span>₹${total}</span>
+            </div>
+            <div class="flex-row justify-between mb-sm">
+              <span class="text-secondary">Platform Fee</span>
+              <span>₹${platformFee}</span>
+            </div>
+            <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 12px 0;" />
+            <div class="flex-row justify-between font-bold text-body mb-md">
+              <span>To Pay</span>
+              <span>₹${finalTotal}</span>
+            </div>
+
+            <div class="flex-row justify-between align-center p-sm" style="background: rgba(56, 161, 105, 0.1); border-radius: 8px;">
+              <div class="flex-col">
+                <span class="text-small font-bold" style="color: var(--success-color);">Campus Wallet</span>
+                <span class="text-small text-secondary">Bal: ₹${user.walletBalance}</span>
+              </div>
+              ${balanceBadge}
+            </div>
+          </div>
+
+          <button id="checkout-btn" class="btn-primary mt-lg w-full" style="padding: 16px;" ${user.walletBalance < finalTotal ? 'disabled' : ''} onclick="handleCheckout()">
+            Pay ₹${finalTotal} using Wallet
+          </button>
+        </div>
+        ${getNavHtml()}
+      `;
+    }
+
+    function getNavHtml() {
+      return `
+        <nav class="bottom-nav">
+          <a href="index.html" class="bottom-nav-item">
+            <span>🏠</span><span>Home</span>
+          </a>
+          <a href="cart.html" class="bottom-nav-item active">
+            <span>🛒</span><span>Cart</span>
+          </a>
+        </nav>
+      `;
+    }
+
+    window.removeItem = function(itemId) {
+      cartManager.removeFromCart(itemId);
+      renderCart();
+    };
+
+    window.handleCheckout = function() {
+      const btn = document.getElementById('checkout-btn');
+      btn.innerText = 'Processing...';
+      btn.disabled = true;
+      
+      setTimeout(() => {
+        const mockQR = `QR_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+        const mockOrderId = `ord_${Math.random().toString(36).substr(2, 9)}`;
+        
+        cartManager.clearCart();
+        
+        document.getElementById('app-root').innerHTML = `
+          <div class="main-content flex-col align-center justify-center" style="height: 100vh; text-align: center;">
+            <div class="badge success mb-md" style="font-size: 1rem; padding: 10px 20px;">Order Placed!</div>
+            <h2 class="text-title mb-md">Scan at Counter</h2>
+            <div style="background: white; padding: 20px; border-radius: 16px; display: inline-block; margin-bottom: 20px;">
+               <!-- Mock QR Code visually -->
+               <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #000 25%, transparent 25%) -50px 0, linear-gradient(225deg, #000 25%, transparent 25%) -50px 0, linear-gradient(315deg, #000 25%, transparent 25%), linear-gradient(45deg, #000 25%, transparent 25%); background-size: 20px 20px; background-color: #fff;"></div>
+            </div>
+            <p class="font-bold text-body mb-sm">${mockQR}</p>
+            <p class="text-small text-secondary mb-lg">Order ID: ${mockOrderId}</p>
+            <a href="index.html" class="btn-primary">Start New Order</a>
+          </div>
+          ${getNavHtml()}
+        `;
+      }, 1500);
+    };
+  </script>
+</body>
+</html>
