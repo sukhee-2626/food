@@ -2,34 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniBite | Home</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>UniBite | Discover</title>
   <link rel="stylesheet" href="styles.css">
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
 </head>
 <body>
   <div class="app-container">
     <div class="main-content">
-      <header class="mb-md">
-        <h1 class="text-title">UniBite</h1>
-        <p class="text-subtitle">What are you craving today?</p>
+      
+      <!-- Premium Hero Header -->
+      <header class="p-md mb-md">
+        <div class="flex-row justify-between align-center mb-md">
+          <div class="flex-row gap-sm align-center">
+            <i class="ph-fill ph-map-pin" style="color: var(--primary); font-size: 1.2rem;"></i>
+            <span class="text-small font-bold">Campus Zone A</span>
+          </div>
+          <div class="btn-icon" style="background: var(--bg-surface); border: 1px solid var(--border);">
+            <i class="ph ph-user"></i>
+          </div>
+        </div>
+        <h1 class="text-hero mb-sm">What are you<br/>craving today?</h1>
+        
+        <!-- Search Bar -->
+        <div class="card flex-row gap-sm align-center mt-md" style="padding: 12px 20px; border-radius: var(--radius-full);">
+          <i class="ph ph-magnifying-glass text-muted" style="font-size: 1.2rem;"></i>
+          <input type="text" placeholder="Search for burgers, coffee..." style="border: none; background: transparent; outline: none; width: 100%; font-family: inherit; font-size: 1rem; color: var(--text-main);">
+        </div>
       </header>
 
-      <section class="mt-lg">
-        <h2 class="text-body mb-md">Campus Canteens</h2>
+      <!-- Categories Scroll -->
+      <div class="m-md">
+        <div class="scroll-x">
+          <div class="category-pill active">🍔 All</div>
+          <div class="category-pill">☕ Beverages</div>
+          <div class="category-pill">🌯 Quick Bites</div>
+          <div class="category-pill">🍛 Meals</div>
+          <div class="category-pill">🍰 Desserts</div>
+        </div>
+      </div>
+
+      <section class="m-md mt-lg">
+        <div class="flex-row justify-between align-center mb-md">
+          <h2 class="text-title">Campus Canteens</h2>
+          <span class="text-primary text-small font-bold" style="cursor: pointer;">See All</span>
+        </div>
+        
         <div id="shops-container" class="flex-col gap-md">
-          <!-- Shops will be injected here via JS -->
+          <!-- Shops injected here via JS -->
         </div>
       </section>
     </div>
 
+    <!-- Bottom Nav -->
     <nav class="bottom-nav">
       <a href="index.html" class="bottom-nav-item active">
-        <span>🏠</span>
+        <i class="ph-fill ph-house"></i>
         <span>Home</span>
       </a>
+      <a href="#" class="bottom-nav-item">
+        <i class="ph ph-magnifying-glass"></i>
+        <span>Search</span>
+      </a>
       <a href="cart.html" class="bottom-nav-item">
-        <span>🛒</span>
+        <i class="ph ph-shopping-bag"></i>
         <span>Cart</span>
       </a>
     </nav>
@@ -40,30 +77,33 @@
     document.addEventListener('DOMContentLoaded', () => {
       const container = document.getElementById('shops-container');
       
-      MOCK_SHOPS.forEach(shop => {
+      MOCK_SHOPS.forEach((shop, index) => {
         const card = document.createElement('a');
         card.href = `shop.html?id=${shop.id}`;
-        card.className = 'card animate-fade-in';
+        card.className = 'shop-card';
+        card.style.animation = `slideUpFade 0.5s ease forwards ${index * 0.1}s`;
+        card.style.opacity = '0';
         
-        const statusBadge = shop.isOpen 
-          ? `<span class="badge success">Open</span>` 
-          : `<span class="badge warning">Closed</span>`;
-          
-        const waitTimeHtml = shop.isOpen 
-          ? `<div class="flex-row gap-sm"><span class="text-small">Wait time:</span><span class="badge warning animate-pulse">~${shop.estimatedWaitTime} min</span></div>`
-          : ``;
+        const statusPill = shop.isOpen 
+          ? `<span class="badge glass" style="position: absolute; top: 12px; right: 12px; z-index: 2;"><i class="ph-fill ph-clock"></i> ${shop.estimatedWaitTime} min</span>` 
+          : `<span class="badge glass" style="position: absolute; top: 12px; right: 12px; z-index: 2; background: rgba(255,0,0,0.6);">Closed</span>`;
 
         card.innerHTML = `
-          <div class="flex-row justify-between mb-md">
-            <div>
-              <h3 class="text-body">${shop.name}</h3>
-              <p class="text-small">${shop.type}</p>
-            </div>
-            ${statusBadge}
+          <div class="shop-card-img-wrap">
+            ${statusPill}
+            <div style="position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent); z-index: 1;"></div>
+            <img src="${shop.imageUrl}" class="img-cover" alt="${shop.name}">
           </div>
-          <div class="flex-row justify-between align-center">
-            <p class="text-small text-secondary">★ ${shop.rating.toFixed(1)}</p>
-            ${waitTimeHtml}
+          <div class="shop-card-content">
+            <div class="flex-row justify-between align-center mb-sm">
+              <h3 class="text-body">${shop.name}</h3>
+              <div class="flex-row gap-xs align-center text-small font-bold" style="color: var(--warning);">
+                <i class="ph-fill ph-star"></i>
+                <span>${shop.rating.toFixed(1)}</span>
+              </div>
+            </div>
+            <p class="text-small text-muted mb-sm">${shop.type}</p>
+            <p class="text-small">${shop.description.substring(0, 50)}...</p>
           </div>
         `;
         

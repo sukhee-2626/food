@@ -3,139 +3,266 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UniBite | Admin Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <title>UniBite | Admin Panel</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
-    @media (min-width: 768px) {
-      .app-container { max-width: 1200px; }
-      .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); }
+    .admin-layout { display: flex; min-height: 100vh; }
+    .admin-sidebar {
+      width: 260px;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
     }
-    .stat-card {
-      background: var(--bg-secondary);
+    .admin-sidebar .sidebar-brand { font-size: 1.4rem; font-weight: 800; margin-bottom: 32px; color: #f8fafc; }
+    .admin-sidebar .sidebar-brand span { color: var(--primary); }
+    .admin-sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      color: #94a3b8;
+      transition: var(--transition);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    .admin-sidebar-item:hover { background: rgba(255,255,255,0.05); color: #f8fafc; }
+    .admin-sidebar-item.active { background: rgba(255, 75, 75, 0.15); color: var(--primary); }
+    .admin-sidebar-item i { font-size: 1.2rem; }
+    .admin-main { flex: 1; padding: 32px; background: var(--bg-base); overflow-y: auto; }
+    .stat-card-premium {
+      background: var(--bg-surface);
       border-radius: var(--radius-md);
-      padding: var(--spacing-lg);
-      border: 1px solid var(--border-color);
-      text-align: center;
+      padding: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
     }
-    .stat-value {
-      font-size: 2.5rem;
+    .stat-card-premium::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+    }
+    .stat-card-premium.revenue::before { background: linear-gradient(90deg, var(--primary), #ff7a7a); }
+    .stat-card-premium.orders::before { background: linear-gradient(90deg, #3b82f6, #93c5fd); }
+    .stat-card-premium.shops::before { background: linear-gradient(90deg, var(--success), #6ee7b7); }
+    .stat-card-premium.students::before { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+    .stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 16px;
+    }
+    .stat-icon.revenue { background: var(--primary-light); color: var(--primary); }
+    .stat-icon.orders { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+    .stat-icon.shops { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .stat-icon.students { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; }
+    .stat-number { font-size: 2rem; font-weight: 800; margin-bottom: 4px; }
+    .data-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .data-table th {
+      text-align: left;
+      padding: 12px 16px;
+      font-size: 0.75rem;
       font-weight: 700;
-      color: var(--accent-color);
-      margin-top: var(--spacing-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      background: var(--bg-base);
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table td {
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .data-table tbody tr { transition: var(--transition); }
+    .data-table tbody tr:hover { background: var(--bg-base); }
+    .shop-row-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+    }
+    .trend-up { color: var(--success); font-weight: 700; font-size: 0.8rem; }
+    @media (max-width: 768px) {
+      .admin-sidebar { display: none; }
+      .admin-main { padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <header class="p-md" style="border-bottom: 1px solid var(--border-color); background: var(--bg-secondary);">
-      <div class="flex-row justify-between align-center">
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="sidebar-brand">Uni<span>Bite</span> Admin</div>
+      <div class="admin-sidebar-item active"><i class="ph ph-chart-pie-slice"></i> Overview</div>
+      <div class="admin-sidebar-item"><i class="ph ph-storefront"></i> Shops</div>
+      <div class="admin-sidebar-item"><i class="ph ph-receipt"></i> Transactions</div>
+      <div class="admin-sidebar-item"><i class="ph ph-users"></i> Students</div>
+      <div class="admin-sidebar-item"><i class="ph ph-gear"></i> Settings</div>
+      <div style="flex: 1;"></div>
+      <a href="index.html" class="admin-sidebar-item" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+        <i class="ph ph-arrow-left"></i> Back to App
+      </a>
+    </aside>
+
+    <main class="admin-main">
+      <div class="flex-row justify-between align-center mb-lg">
         <div>
-          <h1 class="text-title" style="margin: 0; color: #1a202c;">Campus Super-Admin</h1>
-          <p class="text-small">Overview across all canteens</p>
+          <h1 class="text-title">Campus Overview</h1>
+          <p class="text-small text-muted">Real-time analytics across all canteens</p>
         </div>
-        <a href="index.html" class="btn-secondary" style="padding: 8px 16px;">Back to App</a>
-      </div>
-    </header>
-
-    <div class="main-content" style="padding-bottom: var(--spacing-xl);">
-      
-      <div class="flex-row justify-between align-center mb-md mt-sm">
-        <h2 class="text-body font-bold">Today's Overview</h2>
-        <button class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="renderAdminStats()">Refresh Data</button>
-      </div>
-
-      <div class="dashboard-grid mb-lg">
-        <div class="stat-card">
-          <p class="text-small text-secondary font-bold text-uppercase">Total Orders</p>
-          <div class="stat-value" id="stat-total-orders">0</div>
-        </div>
-        <div class="stat-card">
-          <p class="text-small text-secondary font-bold text-uppercase">Total Revenue</p>
-          <div class="stat-value" id="stat-total-revenue">₹0</div>
-        </div>
-        <div class="stat-card">
-          <p class="text-small text-secondary font-bold text-uppercase">Active Shops</p>
-          <div class="stat-value" id="stat-active-shops">0</div>
+        <div class="flex-row gap-sm">
+          <span class="badge success animate-pulse-ring"><i class="ph-fill ph-circle" style="font-size: 8px;"></i> Live</span>
+          <button class="btn-secondary" onclick="renderAdminStats()" style="padding: 8px 16px;"><i class="ph ph-arrows-clockwise"></i> Refresh</button>
         </div>
       </div>
 
-      <h2 class="text-body font-bold mb-md">All Campus Shops</h2>
-      <div id="shops-list-container" class="flex-col gap-md mb-lg">
-        <!-- Shops injected here -->
+      <div class="dashboard-grid mb-lg" id="stats-grid">
+        <!-- Stats injected -->
       </div>
 
-      <h2 class="text-body font-bold mb-md">Recent Transactions</h2>
-      <div class="card bg-secondary" style="padding: 0; overflow: hidden;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <h2 class="text-body font-bold mb-md" style="margin-top: 32px;">Shop Performance</h2>
+      <div class="card mb-lg" style="padding: 0; overflow: hidden;">
+        <table class="data-table">
           <thead>
-            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color);">
-              <th class="p-sm text-small">Order ID</th>
-              <th class="p-sm text-small">Shop</th>
-              <th class="p-sm text-small">User</th>
-              <th class="p-sm text-small">Amount</th>
-              <th class="p-sm text-small">Status</th>
+            <tr>
+              <th>Shop</th>
+              <th>Type</th>
+              <th>Status</th>
+              <th>Orders</th>
+              <th>Revenue</th>
+              <th>Rating</th>
             </tr>
           </thead>
-          <tbody id="transactions-container">
-            <!-- Transactions injected here -->
+          <tbody id="shops-table-body">
+            <!-- Rows injected -->
           </tbody>
         </table>
       </div>
-    </div>
+
+      <h2 class="text-body font-bold mb-md">Recent Transactions</h2>
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Shop</th>
+              <th>Student</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Time</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-body">
+            <!-- Rows injected -->
+          </tbody>
+        </table>
+      </div>
+    </main>
   </div>
 
   <script src="js/data.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       renderAdminStats();
-      setInterval(renderAdminStats, 5000); // Auto-refresh 5s
+      setInterval(renderAdminStats, 5000);
     });
 
     window.renderAdminStats = () => {
       const allOrders = orderManager.getOrders();
-      const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+      const totalRevenue = allOrders.reduce((sum, o) => sum + o.totalAmount, 0);
       const activeShops = MOCK_SHOPS.filter(s => s.isOpen).length;
+      const completedOrders = allOrders.filter(o => o.status === 'Collected').length;
 
-      // Update Top Stats
-      document.getElementById('stat-total-orders').innerText = allOrders.length;
-      document.getElementById('stat-total-revenue').innerText = `₹${totalRevenue}`;
-      document.getElementById('stat-active-shops').innerText = `${activeShops} / ${MOCK_SHOPS.length}`;
+      // Stats grid
+      document.getElementById('stats-grid').innerHTML = `
+        <div class="stat-card-premium revenue">
+          <div class="stat-icon revenue"><i class="ph ph-currency-inr"></i></div>
+          <div class="stat-number">₹${totalRevenue.toLocaleString()}</div>
+          <p class="text-small text-muted">Total Revenue</p>
+          <p class="trend-up" style="margin-top: 8px;">↑ +12% today</p>
+        </div>
+        <div class="stat-card-premium orders">
+          <div class="stat-icon orders"><i class="ph ph-receipt"></i></div>
+          <div class="stat-number">${allOrders.length}</div>
+          <p class="text-small text-muted">Total Orders</p>
+          <p class="trend-up" style="margin-top: 8px;">↑ +${allOrders.length} today</p>
+        </div>
+        <div class="stat-card-premium shops">
+          <div class="stat-icon shops"><i class="ph ph-storefront"></i></div>
+          <div class="stat-number">${activeShops}/${MOCK_SHOPS.length}</div>
+          <p class="text-small text-muted">Active Shops</p>
+        </div>
+        <div class="stat-card-premium students">
+          <div class="stat-icon students"><i class="ph ph-graduation-cap"></i></div>
+          <div class="stat-number">${new Set(allOrders.map(o => o.userId)).size || 0}</div>
+          <p class="text-small text-muted">Unique Students</p>
+        </div>
+      `;
 
-      // Render Shops
-      document.getElementById('shops-list-container').innerHTML = MOCK_SHOPS.map(shop => {
+      // Shops table
+      document.getElementById('shops-table-body').innerHTML = MOCK_SHOPS.map(shop => {
         const shopOrders = allOrders.filter(o => o.shopId === shop.id);
         const shopRev = shopOrders.reduce((s, o) => s + o.totalAmount, 0);
         return `
-          <div class="card flex-row justify-between align-center">
-            <div>
-              <h3 class="font-bold">${shop.name}</h3>
-              <p class="text-small text-secondary">${shop.type}</p>
-            </div>
-            <div class="text-right">
-              <p class="font-bold">₹${shopRev}</p>
-              <p class="text-small text-secondary">${shopOrders.length} orders</p>
-            </div>
-            ${shop.isOpen ? '<span class="badge success">Online</span>' : '<span class="badge warning">Offline</span>'}
-          </div>
+          <tr>
+            <td>
+              <div class="flex-row gap-sm align-center">
+                <img src="${shop.imageUrl}" class="shop-row-avatar" alt="${shop.name}">
+                <span class="font-bold">${shop.name}</span>
+              </div>
+            </td>
+            <td class="text-muted">${shop.type}</td>
+            <td>${shop.isOpen ? '<span class="badge success">Online</span>' : '<span class="badge warning">Offline</span>'}</td>
+            <td class="font-bold">${shopOrders.length}</td>
+            <td class="font-bold">₹${shopRev.toLocaleString()}</td>
+            <td>
+              <div class="flex-row gap-xs align-center" style="color: var(--warning);">
+                <i class="ph-fill ph-star"></i> ${shop.rating.toFixed(1)}
+              </div>
+            </td>
+          </tr>
         `;
       }).join('');
 
-      // Render Transactions
-      const recentOrders = [...allOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
-      
+      // Transactions table
+      const recentOrders = [...allOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 15);
       if (recentOrders.length === 0) {
-        document.getElementById('transactions-container').innerHTML = `<tr><td colspan="5" class="p-md text-center text-secondary">No transactions yet.</td></tr>`;
+        document.getElementById('transactions-body').innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);"><i class="ph ph-receipt" style="font-size: 2rem; display: block; margin-bottom: 8px;"></i>No transactions yet</td></tr>`;
       } else {
-        document.getElementById('transactions-container').innerHTML = recentOrders.map(order => {
-          const shopName = getShopById(order.shopId).name;
+        document.getElementById('transactions-body').innerHTML = recentOrders.map(order => {
+          const shopName = getShopById(order.shopId)?.name || 'Unknown';
+          const timeAgo = Math.round((new Date() - new Date(order.createdAt)) / 60000);
+          const timeStr = timeAgo === 0 ? 'Just now' : timeAgo + 'm ago';
+          const statusClassMap = { Placed: 'status-placed', Preparing: 'status-preparing', Ready: 'status-ready', Collected: 'status-collected' };
           return `
-            <tr style="border-bottom: 1px solid var(--border-color);">
-              <td class="p-sm text-small font-bold">#${order.id.slice(0, 6)}</td>
-              <td class="p-sm text-small">${shopName}</td>
-              <td class="p-sm text-small">${order.userId}</td>
-              <td class="p-sm text-small">₹${order.totalAmount}</td>
-              <td class="p-sm"><span class="badge" style="font-size:0.6rem;">${order.status}</span></td>
+            <tr>
+              <td><span class="font-bold">#${order.id.slice(-6).toUpperCase()}</span></td>
+              <td>${shopName}</td>
+              <td>${order.userId}</td>
+              <td class="font-bold">₹${order.totalAmount}</td>
+              <td><span class="status-pill ${statusClassMap[order.status] || ''}">${order.status}</span></td>
+              <td class="text-muted text-small">${timeStr}</td>
             </tr>
           `;
         }).join('');

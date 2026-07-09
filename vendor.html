@@ -4,124 +4,244 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UniBite | Vendor Dashboard</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
-    /* Desktop layout overrides for dashboards */
-    @media (min-width: 768px) {
-      .app-container { max-width: 1000px; }
-      .dashboard-grid { display: grid; grid-template-columns: 300px 1fr; gap: var(--spacing-lg); }
+    .vendor-layout { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 280px;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+    }
+    .sidebar-brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 32px;
+      letter-spacing: -0.02em;
+    }
+    .sidebar-brand span { color: var(--primary); }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: var(--transition);
+      cursor: pointer;
+    }
+    .sidebar-item:hover { background: var(--bg-base); color: var(--text-main); }
+    .sidebar-item.active { background: var(--primary-light); color: var(--primary); }
+    .sidebar-item i { font-size: 1.3rem; }
+    .sidebar-count {
+      margin-left: auto;
+      background: var(--primary);
+      color: white;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+    }
+    .vendor-main { flex: 1; padding: 32px; background: var(--bg-base); }
+    .order-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    .order-card:hover { box-shadow: var(--shadow-md); }
+    .order-card.new { border-left: 4px solid var(--primary); }
+    .order-card.preparing { border-left: 4px solid var(--warning); }
+    .order-card.ready { border-left: 4px solid var(--success); }
+    .status-pill {
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-placed { background: var(--primary-light); color: var(--primary); }
+    .status-preparing { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+    .status-ready { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+    .status-collected { background: var(--bg-base); color: var(--text-muted); }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+    }
+    .metric-card {
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .metric-value { font-size: 2rem; font-weight: 800; color: var(--text-main); margin-top: 4px; }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .vendor-main { padding: 16px; }
     }
   </style>
 </head>
 <body>
-  <div class="app-container">
-    <header class="p-md" style="border-bottom: 1px solid var(--border-color);">
-      <div class="flex-row justify-between align-center">
-        <div>
-          <h1 class="text-title" style="margin: 0;">Vendor Dashboard</h1>
-          <p class="text-small">Logged in as: <strong id="shop-name-display">SnackJack</strong></p>
-        </div>
-        <a href="index.html" class="btn-secondary" style="padding: 8px 16px;">Exit to App</a>
+  <div class="vendor-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">Uni<span>Bite</span> Vendor</div>
+      <div class="sidebar-item active" onclick="switchView('Placed')" id="nav-Placed">
+        <i class="ph ph-bell-ringing"></i> New Orders <span class="sidebar-count" id="count-Placed">0</span>
       </div>
-    </header>
+      <div class="sidebar-item" onclick="switchView('Preparing')" id="nav-Preparing">
+        <i class="ph ph-cooking-pot"></i> Preparing <span class="sidebar-count" id="count-Preparing">0</span>
+      </div>
+      <div class="sidebar-item" onclick="switchView('Ready')" id="nav-Ready">
+        <i class="ph ph-package"></i> Ready <span class="sidebar-count" id="count-Ready">0</span>
+      </div>
+      <div class="sidebar-item" onclick="switchView('Collected')" id="nav-Collected">
+        <i class="ph ph-check-circle"></i> History
+      </div>
+      <div style="flex: 1;"></div>
+      <a href="index.html" class="sidebar-item" style="color: var(--text-muted);">
+        <i class="ph ph-sign-out"></i> Exit to App
+      </a>
+    </aside>
 
-    <div class="main-content dashboard-grid" style="padding-bottom: var(--spacing-xl);">
-      <aside class="mb-lg">
-        <div class="card bg-secondary">
-          <h2 class="text-body font-bold mb-md">Shop Controls</h2>
-          <div class="flex-row justify-between align-center mb-md">
-            <span class="text-small">Accepting Orders</span>
-            <span class="badge success">ONLINE</span>
-          </div>
-          <div class="flex-col gap-sm">
-            <button class="btn-secondary" onclick="renderOrders('Placed')">New Orders</button>
-            <button class="btn-secondary" onclick="renderOrders('Preparing')">Preparing</button>
-            <button class="btn-secondary" onclick="renderOrders('Ready')">Ready for Pickup</button>
-            <button class="btn-secondary" onclick="renderOrders('Collected')">Completed History</button>
-          </div>
+    <main class="vendor-main">
+      <div class="top-bar">
+        <div>
+          <h1 class="text-title" id="view-title">New Orders</h1>
+          <p class="text-small text-muted" id="shop-subtitle">SnackJack Dashboard</p>
         </div>
-      </aside>
+        <div class="flex-row gap-sm">
+          <span class="badge success animate-pulse-ring"><i class="ph-fill ph-circle" style="font-size: 8px;"></i> Live</span>
+          <button class="btn-secondary" onclick="refreshData()" style="padding: 8px 16px;"><i class="ph ph-arrows-clockwise"></i> Refresh</button>
+        </div>
+      </div>
 
-      <section>
-        <div class="flex-row justify-between align-center mb-md">
-          <h2 class="text-title" id="current-view-title">New Orders</h2>
-          <button class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="refreshData()">Refresh</button>
-        </div>
-        
-        <div id="orders-container" class="flex-col gap-md">
-          <!-- Orders injected here -->
-        </div>
-      </section>
-    </div>
+      <div class="dashboard-grid mb-lg" id="metrics-row">
+        <!-- Metrics injected -->
+      </div>
+
+      <div id="orders-container" class="flex-col gap-md">
+        <!-- Orders injected -->
+      </div>
+    </main>
   </div>
 
   <script src="js/data.js"></script>
   <script>
-    const CURRENT_SHOP_ID = "shop_1"; // Hardcoded to SnackJack for demo
+    const CURRENT_SHOP_ID = "shop_1";
     let currentFilter = 'Placed';
 
     document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('shop-name-display').innerText = getShopById(CURRENT_SHOP_ID).name;
-      renderOrders(currentFilter);
-      
-      // Auto refresh every 5 seconds to simulate real-time
-      setInterval(() => {
-        renderOrders(currentFilter);
-      }, 5000);
+      document.getElementById('shop-subtitle').innerText = getShopById(CURRENT_SHOP_ID).name + ' Dashboard';
+      renderAll();
+      setInterval(renderAll, 4000);
     });
 
-    window.refreshData = () => renderOrders(currentFilter);
+    window.refreshData = () => renderAll();
+
+    function renderAll() {
+      const allOrders = orderManager.getOrdersByShop(CURRENT_SHOP_ID);
+      // Update sidebar counts
+      ['Placed', 'Preparing', 'Ready'].forEach(s => {
+        const count = allOrders.filter(o => o.status === s).length;
+        document.getElementById(`count-${s}`).innerText = count;
+      });
+      renderMetrics(allOrders);
+      renderOrders(currentFilter);
+    }
+
+    function renderMetrics(allOrders) {
+      const todayRevenue = allOrders.filter(o => o.status === 'Collected').reduce((s, o) => s + o.totalAmount, 0);
+      const activeOrders = allOrders.filter(o => ['Placed', 'Preparing', 'Ready'].includes(o.status)).length;
+      document.getElementById('metrics-row').innerHTML = `
+        <div class="metric-card"><p class="text-small text-muted font-bold">Today's Revenue</p><div class="metric-value">₹${todayRevenue}</div></div>
+        <div class="metric-card"><p class="text-small text-muted font-bold">Active Orders</p><div class="metric-value">${activeOrders}</div></div>
+        <div class="metric-card"><p class="text-small text-muted font-bold">Total Completed</p><div class="metric-value">${allOrders.filter(o => o.status === 'Collected').length}</div></div>
+      `;
+    }
+
+    window.switchView = (status) => {
+      currentFilter = status;
+      document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(`nav-${status}`).classList.add('active');
+      const titles = { Placed: 'New Orders', Preparing: 'In Kitchen', Ready: 'Ready for Pickup', Collected: 'Order History' };
+      document.getElementById('view-title').innerText = titles[status];
+      renderOrders(status);
+    };
 
     window.renderOrders = (statusFilter) => {
-      currentFilter = statusFilter;
-      document.getElementById('current-view-title').innerText = 
-        statusFilter === 'Placed' ? 'New Orders' :
-        statusFilter === 'Preparing' ? 'In Kitchen' :
-        statusFilter === 'Ready' ? 'Waiting for Pickup' : 'Order History';
-
       const container = document.getElementById('orders-container');
       const allOrders = orderManager.getOrdersByShop(CURRENT_SHOP_ID);
-      const filteredOrders = allOrders.filter(o => o.status === statusFilter).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const filtered = allOrders.filter(o => o.status === statusFilter).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-      if (filteredOrders.length === 0) {
-        container.innerHTML = `<div class="card text-center p-lg"><p class="text-secondary">No orders found in this queue.</p></div>`;
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="text-align: center; padding: 60px 20px;">
+            <i class="ph ph-clipboard-text" style="font-size: 4rem; color: var(--border); margin-bottom: 16px;"></i>
+            <p class="text-muted">No orders in this queue</p>
+          </div>
+        `;
         return;
       }
 
-      container.innerHTML = filteredOrders.map(order => {
+      container.innerHTML = filtered.map((order, i) => {
         const timeAgo = Math.round((new Date() - new Date(order.createdAt)) / 60000);
+        const timeStr = timeAgo === 0 ? 'Just now' : timeAgo + ' min ago';
+        const statusClass = order.status.toLowerCase();
         let actionBtn = '';
-        
+
         if (order.status === 'Placed') {
-          actionBtn = `<button class="btn-primary w-full mt-sm" onclick="updateStatus('${order.id}', 'Preparing')">Accept & Start Cooking</button>`;
+          actionBtn = `<button class="btn-primary w-full" onclick="updateStatus('${order.id}', 'Preparing')" style="margin-top: 16px;"><i class="ph ph-cooking-pot"></i> Accept & Start Cooking</button>`;
         } else if (order.status === 'Preparing') {
-          actionBtn = `<button class="btn-primary w-full mt-sm" style="background: var(--warning-color);" onclick="updateStatus('${order.id}', 'Ready')">Mark as Ready</button>`;
+          actionBtn = `<button class="btn-primary w-full" onclick="updateStatus('${order.id}', 'Ready')" style="margin-top: 16px; background: linear-gradient(135deg, var(--warning), #fbbf24); box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);"><i class="ph ph-package"></i> Mark as Ready</button>`;
         } else if (order.status === 'Ready') {
           actionBtn = `
-            <div class="p-sm mb-sm text-center" style="background: #f0f4f8; border-radius: 8px;">
-              <p class="text-small">Student will scan QR to collect</p>
-              <p class="font-bold">${order.qrToken}</p>
+            <div style="background: var(--bg-base); border-radius: var(--radius-sm); padding: 12px; text-align: center; margin-top: 16px; margin-bottom: 8px;">
+              <p class="text-small text-muted">Student QR Token</p>
+              <p class="font-bold text-body" style="letter-spacing: 2px; margin-top: 4px;">${order.qrToken}</p>
             </div>
-            <button class="btn-primary w-full mt-sm" style="background: var(--success-color);" onclick="updateStatus('${order.id}', 'Collected')">Verify QR & Complete</button>
+            <button class="btn-primary w-full" onclick="updateStatus('${order.id}', 'Collected')" style="background: linear-gradient(135deg, var(--success), #34d399); box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);"><i class="ph ph-qr-code"></i> Verify & Complete</button>
           `;
         }
 
-        const itemsList = order.items.map(i => `<div class="flex-row justify-between text-small"><span>${i.quantity}x ${i.menuItem.name}</span><span>₹${i.menuItem.price * i.quantity}</span></div>`).join('');
+        const itemsList = order.items.map(it => `
+          <div class="flex-row justify-between" style="padding: 4px 0;">
+            <span class="text-small">${it.quantity}× ${it.menuItem.name}</span>
+            <span class="text-small font-bold">₹${it.menuItem.price * it.quantity}</span>
+          </div>
+        `).join('');
 
         return `
-          <div class="card animate-fade-in">
+          <div class="order-card ${statusClass} animate-slide-up" style="animation-delay: ${i * 0.08}s; opacity: 0;">
             <div class="flex-row justify-between align-center mb-sm">
-              <span class="font-bold text-body">#${order.id.slice(0, 8)}</span>
-              <span class="text-small text-secondary">${timeAgo === 0 ? 'Just now' : timeAgo + ' min ago'}</span>
+              <div class="flex-row gap-sm align-center">
+                <span class="font-bold text-body">#${order.id.slice(-6).toUpperCase()}</span>
+                <span class="status-pill status-${statusClass}">${order.status}</span>
+              </div>
+              <span class="text-small text-muted"><i class="ph ph-clock"></i> ${timeStr}</span>
             </div>
-            <hr style="border:none; border-top: 1px solid var(--border-color); margin: 8px 0;" />
-            <div class="flex-col gap-sm mb-md">
+            <div class="flex-row gap-sm align-center mb-md text-small text-muted">
+              <i class="ph ph-user"></i> ${order.userId}
+            </div>
+            <div style="border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 12px 0; margin-bottom: 12px;">
               ${itemsList}
             </div>
-            <div class="flex-row justify-between font-bold mb-md">
-              <span>Total</span>
-              <span>₹${order.totalAmount}</span>
+            <div class="flex-row justify-between align-center">
+              <span class="text-small text-muted">Total</span>
+              <span class="text-body font-bold" style="color: var(--primary);">₹${order.totalAmount}</span>
             </div>
             ${actionBtn}
           </div>
@@ -131,7 +251,7 @@
 
     window.updateStatus = (orderId, newStatus) => {
       orderManager.updateOrderStatus(orderId, newStatus);
-      renderOrders(currentFilter);
+      renderAll();
     };
   </script>
 </body>

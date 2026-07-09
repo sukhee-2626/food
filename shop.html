@@ -2,27 +2,63 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>UniBite | Shop Menu</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    .shop-hero {
+      position: relative;
+      height: 250px;
+      width: 100%;
+    }
+    .shop-hero-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .shop-hero-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--bg-base) 0%, transparent 100%);
+    }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      background: var(--bg-surface-glass);
+      backdrop-filter: blur(8px);
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-md);
+      color: var(--text-main);
+    }
+    .menu-item-card {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      align-items: center;
+    }
+    .menu-item-img {
+      width: 80px;
+      height: 80px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+    }
+  </style>
 </head>
 <body>
-  <div class="app-container">
-    <div class="main-content animate-fade-in" id="content">
-      <div class="p-md"><p>Loading shop...</p></div>
-    </div>
-    
-    <nav class="bottom-nav">
-      <a href="index.html" class="bottom-nav-item">
-        <span>🏠</span>
-        <span>Home</span>
-      </a>
-      <a href="cart.html" class="bottom-nav-item">
-        <span>🛒</span>
-        <span>Cart</span>
-      </a>
-    </nav>
+  <div class="app-container" id="app-root">
+    <!-- Populated via JS -->
   </div>
 
   <script src="js/data.js"></script>
@@ -32,66 +68,96 @@
       const urlParams = new URLSearchParams(window.location.search);
       const shopId = urlParams.get('id');
       const shop = getShopById(shopId);
-      const content = document.getElementById('content');
+      const menuItems = getMenuItemsByShopId(shopId);
 
       if (!shop) {
-        content.innerHTML = `<div class="p-md"><p>Shop not found.</p><a href="index.html" class="btn-secondary mt-md">Back to Home</a></div>`;
+        document.getElementById('app-root').innerHTML = `
+          <div class="p-lg text-center" style="margin-top: 100px;">
+            <h2>Shop not found</h2>
+            <a href="index.html" class="btn-primary mt-md">Back to Home</a>
+          </div>
+        `;
         return;
       }
 
-      const menuItems = getMenuItemsByShopId(shopId);
-      
-      const waitTimeHtml = shop.isOpen 
-        ? `<span class="badge warning">Wait: ~${shop.estimatedWaitTime} min</span>` 
-        : ``;
-
-      let menuHtml = menuItems.map(item => `
-        <div class="card flex-row justify-between align-center">
-          <div>
-            <div class="flex-row gap-sm align-center">
-              <span class="badge ${item.isVeg ? 'success' : 'warning'}" style="padding: 2px 6px; font-size: 0.6rem;">
-                ${item.isVeg ? "VEG" : "NON-VEG"}
-              </span>
+      const itemsHtml = menuItems.map(item => `
+        <div class="menu-item-card">
+          <img src="${item.imageUrl}" class="menu-item-img" alt="${item.name}">
+          <div style="flex: 1;">
+            <div class="flex-row gap-xs align-center mb-sm">
+              ${item.isVeg 
+                ? '<div style="width: 12px; height: 12px; border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; border-radius: 2px;"><div style="width: 6px; height: 6px; background: var(--success); border-radius: 50%;"></div></div>'
+                : '<div style="width: 12px; height: 12px; border: 1px solid var(--primary); display: flex; align-items: center; justify-content: center; border-radius: 2px;"><div style="width: 6px; height: 6px; background: var(--primary); border-radius: 50%;"></div></div>'
+              }
               <h3 class="text-body">${item.name}</h3>
             </div>
-            <p class="text-small text-secondary mt-sm">${item.description}</p>
-            <p class="font-bold mt-sm">₹${item.price}</p>
+            <p class="text-small text-muted mb-sm">${item.description}</p>
+            <div class="flex-row justify-between align-center">
+              <span class="font-bold">₹${item.price}</span>
+              ${shop.isOpen 
+                ? `<button class="btn-icon" onclick='cartManager.addToCart(${JSON.stringify(item)})'><i class="ph ph-plus font-bold"></i></button>`
+                : `<span class="badge warning">Closed</span>`
+              }
+            </div>
           </div>
-          <button class="btn-primary" style="padding: 8px 16px; border-radius: 8px;" onclick="addToCart('${item.id}')">
-            ADD
-          </button>
         </div>
       `).join('');
 
-      content.innerHTML = `
-        <header class="mb-lg">
-          <a href="index.html" class="text-small mb-md inline-block">← Back to Campus</a>
-          <div class="flex-row justify-between align-center mt-md">
-            <div>
-              <h1 class="text-title">${shop.name}</h1>
-              <p class="text-subtitle">${shop.type}</p>
+      document.getElementById('app-root').innerHTML = `
+        <div class="main-content">
+          <div class="shop-hero">
+            <a href="index.html" class="back-btn"><i class="ph ph-caret-left font-bold" style="font-size: 1.2rem;"></i></a>
+            <img src="${shop.imageUrl}" class="shop-hero-img" alt="${shop.name}">
+            <div class="shop-hero-gradient"></div>
+          </div>
+          
+          <div class="p-md" style="margin-top: -60px; position: relative; z-index: 2;">
+            <div class="card mb-lg" style="box-shadow: var(--shadow-lg);">
+              <div class="flex-row justify-between align-center mb-sm">
+                <h1 class="text-title">${shop.name}</h1>
+                <div class="flex-row gap-xs align-center font-bold" style="background: rgba(245, 158, 11, 0.1); color: var(--warning); padding: 4px 8px; border-radius: var(--radius-sm);">
+                  <i class="ph-fill ph-star"></i>
+                  <span>${shop.rating.toFixed(1)}</span>
+                </div>
+              </div>
+              <p class="text-small text-muted mb-md">${shop.type}</p>
+              
+              <div class="flex-row gap-md">
+                <div class="flex-row gap-sm align-center text-small">
+                  <i class="ph ph-clock text-primary font-bold"></i>
+                  <span>${shop.estimatedWaitTime} min</span>
+                </div>
+                <div class="flex-row gap-sm align-center text-small">
+                  <i class="ph ph-map-pin text-primary font-bold"></i>
+                  <span>Campus Zone A</span>
+                </div>
+              </div>
             </div>
-            ${waitTimeHtml}
-          </div>
-          <p class="text-body mt-md text-secondary">${shop.description}</p>
-        </header>
 
-        <section>
-          <h2 class="text-body mb-md">Menu</h2>
-          <div class="flex-col gap-sm">
-            ${menuHtml}
+            <div class="scroll-x mb-md">
+              <div class="category-pill active">Recommended</div>
+              <div class="category-pill">Bestsellers</div>
+              <div class="category-pill">Combos</div>
+            </div>
+
+            <div class="flex-col gap-md">
+              ${itemsHtml}
+            </div>
           </div>
-        </section>
+        </div>
+        
+        <!-- Cart Floating Button -->
+        <div style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: calc(var(--max-width) - 40px); z-index: 100;">
+          <a href="cart.html" class="btn-primary w-full" style="justify-content: space-between; box-shadow: 0 10px 25px rgba(255, 75, 75, 0.4);">
+            <div class="flex-row gap-sm align-center">
+              <i class="ph ph-shopping-cart" style="font-size: 1.2rem;"></i>
+              <span>View Cart</span>
+            </div>
+            <i class="ph ph-caret-right" style="font-size: 1.2rem;"></i>
+          </a>
+        </div>
       `;
     });
-
-    // Global function for the inline onclick handler
-    window.addToCart = function(itemId) {
-      const item = MOCK_MENU_ITEMS.find(m => m.id === itemId);
-      if (item) {
-        cartManager.addToCart(item);
-      }
-    };
   </script>
 </body>
 </html>

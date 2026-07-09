@@ -2,156 +2,294 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>UniBite | Cart</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    .cart-item {
+      display: flex;
+      gap: 16px;
+      padding: 16px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border);
+      align-items: center;
+    }
+    .cart-item-img {
+      width: 64px;
+      height: 64px;
+      border-radius: var(--radius-sm);
+      object-fit: cover;
+    }
+    .qty-control {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-base);
+      border-radius: var(--radius-full);
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+    }
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      transition: var(--transition);
+      color: var(--text-main);
+    }
+    .qty-btn:hover { background: var(--primary-light); color: var(--primary); }
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-top: 2px dashed var(--border);
+      margin-top: 8px;
+    }
+
+    /* Success animation */
+    @keyframes checkmark {
+      0% { transform: scale(0); opacity: 0; }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes confetti-fall {
+      0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+    .success-check {
+      width: 100px;
+      height: 100px;
+      background: linear-gradient(135deg, var(--success), #34d399);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: checkmark 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+      box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
+      margin: 0 auto 24px;
+    }
+    .confetti-piece {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      animation: confetti-fall 3s ease-in-out forwards;
+      z-index: 200;
+    }
+  </style>
 </head>
 <body>
   <div class="app-container" id="app-root">
-    <!-- Content injected via JS -->
+    <!-- Populated via JS -->
   </div>
 
   <script src="js/data.js"></script>
   <script src="js/cart.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      renderCart();
-    });
+    function getNavHtml() {
+      return `
+        <nav class="bottom-nav">
+          <a href="index.html" class="bottom-nav-item">
+            <i class="ph ph-house"></i><span>Home</span>
+          </a>
+          <a href="#" class="bottom-nav-item">
+            <i class="ph ph-magnifying-glass"></i><span>Search</span>
+          </a>
+          <a href="cart.html" class="bottom-nav-item active">
+            <i class="ph-fill ph-shopping-bag"></i><span>Cart</span>
+          </a>
+        </nav>
+      `;
+    }
 
     function renderCart() {
-      const appRoot = document.getElementById('app-root');
-      const items = cartManager.getCart();
-      const total = cartManager.getTotal();
-      const user = MOCK_USER;
-      const platformFee = 5;
-      const finalTotal = total + platformFee;
+      const cartItems = cartManager.getCart();
+      const root = document.getElementById('app-root');
 
-      if (items.length === 0) {
-        appRoot.innerHTML = `
-          <div class="main-content animate-fade-in">
-            <header class="mb-lg"><h1 class="text-title">Your Cart</h1></header>
-            <div class="flex-col align-center mt-lg text-secondary">
-              <p>Your cart is empty.</p>
-              <a href="index.html" class="btn-secondary mt-md">Browse Shops</a>
+      if (cartItems.length === 0) {
+        root.innerHTML = `
+          <div class="main-content flex-col" style="align-items: center; justify-content: center; min-height: 80vh; text-align: center; padding: 32px;">
+            <div style="width: 120px; height: 120px; background: var(--primary-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+              <i class="ph ph-shopping-bag" style="font-size: 3rem; color: var(--primary);"></i>
             </div>
+            <h2 class="text-title mb-sm">Your cart is empty</h2>
+            <p class="text-small text-muted mb-lg" style="max-width: 250px;">Looks like you haven't added anything to your cart yet.</p>
+            <a href="index.html" class="btn-primary"><i class="ph ph-storefront"></i> Explore Canteens</a>
           </div>
           ${getNavHtml()}
         `;
         return;
       }
 
-      let itemsHtml = items.map(item => `
-        <div class="card flex-row justify-between align-center mb-sm">
-          <div>
-            <h3 class="text-body">${item.menuItem.name}</h3>
-            <p class="text-small text-secondary">Qty: ${item.quantity} × ₹${item.menuItem.price}</p>
+      const subtotal = cartManager.getTotal();
+      const platformFee = 5;
+      const total = subtotal + platformFee;
+
+      const itemsHtml = cartItems.map((item, index) => `
+        <div class="cart-item animate-slide-up" style="animation-delay: ${index * 0.08}s; opacity: 0;">
+          <img src="${item.menuItem.imageUrl || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80'}" class="cart-item-img" alt="${item.menuItem.name}">
+          <div style="flex: 1;">
+            <h3 class="text-body mb-sm">${item.menuItem.name}</h3>
+            <p class="text-small text-muted">₹${item.menuItem.price} each</p>
           </div>
-          <div class="flex-row gap-sm align-center">
-            <p class="font-bold">₹${item.menuItem.price * item.quantity}</p>
-            <button onclick="removeItem('${item.menuItem.id}')" class="btn-secondary" style="padding: 4px 8px; font-size: 0.8rem; border-radius: 8px; color: var(--accent-color); border-color: var(--accent-color);">-</button>
+          <div class="flex-col gap-sm" style="align-items: flex-end;">
+            <span class="font-bold">₹${item.menuItem.price * item.quantity}</span>
+            <div class="qty-control">
+              <button class="qty-btn" onclick="handleRemove('${item.menuItem.id}')">−</button>
+              <span class="font-bold" style="min-width: 16px; text-align: center;">${item.quantity}</span>
+              <button class="qty-btn" onclick="handleAdd('${item.menuItem.id}')">+</button>
+            </div>
           </div>
         </div>
       `).join('');
 
-      const balanceBadge = user.walletBalance >= finalTotal 
-        ? `<span class="badge success">Sufficient</span>` 
-        : `<span class="badge warning">Low Balance</span>`;
+      root.innerHTML = `
+        <div class="main-content">
+          <div class="glass-header">
+            <div class="flex-row justify-between align-center">
+              <div class="flex-row gap-sm align-center">
+                <a href="index.html" class="btn-icon" style="background: transparent;"><i class="ph ph-caret-left font-bold" style="font-size: 1.2rem;"></i></a>
+                <h1 class="text-title">Your Cart</h1>
+              </div>
+              <span class="badge">${cartItems.length} item${cartItems.length > 1 ? 's' : ''}</span>
+            </div>
+          </div>
 
-      appRoot.innerHTML = `
-        <div class="main-content animate-fade-in">
-          <header class="mb-lg"><h1 class="text-title">Your Cart</h1></header>
-          
-          <div class="flex-col gap-sm">
+          <div class="p-md flex-col gap-md mb-md">
             ${itemsHtml}
           </div>
 
-          <div class="card mt-lg bg-secondary">
-            <h3 class="text-body mb-md">Payment Details</h3>
-            <div class="flex-row justify-between mb-sm">
-              <span class="text-secondary">Item Total</span>
-              <span>₹${total}</span>
-            </div>
-            <div class="flex-row justify-between mb-sm">
-              <span class="text-secondary">Platform Fee</span>
-              <span>₹${platformFee}</span>
-            </div>
-            <hr style="border: none; border-top: 1px dashed var(--border-color); margin: 12px 0;" />
-            <div class="flex-row justify-between font-bold text-body mb-md">
-              <span>To Pay</span>
-              <span>₹${finalTotal}</span>
-            </div>
-
-            <div class="flex-row justify-between align-center p-sm" style="background: rgba(56, 161, 105, 0.1); border-radius: 8px;">
-              <div class="flex-col">
-                <span class="text-small font-bold" style="color: var(--success-color);">Campus Wallet</span>
-                <span class="text-small text-secondary">Bal: ₹${user.walletBalance}</span>
+          <div class="p-md">
+            <div class="card" style="box-shadow: var(--shadow-lg);">
+              <h3 class="text-body mb-md">Bill Summary</h3>
+              <div class="summary-row">
+                <span class="text-small text-muted">Item Total</span>
+                <span class="font-bold">₹${subtotal}</span>
               </div>
-              ${balanceBadge}
+              <div class="summary-row">
+                <span class="text-small text-muted">Platform Fee</span>
+                <span class="text-small">₹${platformFee}</span>
+              </div>
+              <div class="summary-total">
+                <span class="text-body font-bold">To Pay</span>
+                <span class="text-title" style="color: var(--primary);">₹${total}</span>
+              </div>
             </div>
           </div>
 
-          <button id="checkout-btn" class="btn-primary mt-lg w-full" style="padding: 16px;" ${user.walletBalance < finalTotal ? 'disabled' : ''} onclick="handleCheckout()">
-            Pay ₹${finalTotal} using Wallet
-          </button>
+          <div class="p-md">
+            <div class="card flex-row gap-md align-center" style="background: var(--primary-light); border-color: transparent;">
+              <i class="ph ph-wallet" style="font-size: 2rem; color: var(--primary);"></i>
+              <div style="flex: 1;">
+                <p class="text-small text-muted">Wallet Balance</p>
+                <p class="text-body font-bold">₹${MOCK_USER.walletBalance}</p>
+              </div>
+              <span class="badge success"><i class="ph-fill ph-check-circle"></i> Linked</span>
+            </div>
+          </div>
+
+          <div style="padding: 20px; padding-bottom: 100px;">
+            <button class="btn-primary w-full" id="checkout-btn" onclick="handleCheckout()" style="padding: 18px;">
+              <i class="ph ph-lightning" style="font-size: 1.2rem;"></i>
+              Pay ₹${total}
+            </button>
+          </div>
         </div>
         ${getNavHtml()}
       `;
     }
 
-    function getNavHtml() {
-      return `
-        <nav class="bottom-nav">
-          <a href="index.html" class="bottom-nav-item">
-            <span>🏠</span><span>Home</span>
-          </a>
-          <a href="cart.html" class="bottom-nav-item active">
-            <span>🛒</span><span>Cart</span>
-          </a>
-        </nav>
-      `;
-    }
+    window.handleAdd = function(itemId) {
+      const item = MOCK_MENU_ITEMS.find(i => i.id === itemId);
+      if (item) {
+        cartManager.addToCart(item);
+        renderCart();
+      }
+    };
 
-    window.removeItem = function(itemId) {
+    window.handleRemove = function(itemId) {
       cartManager.removeFromCart(itemId);
       renderCart();
     };
 
+    function spawnConfetti() {
+      const colors = ['#FF4B4B', '#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899'];
+      for (let i = 0; i < 40; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = `${Math.random() * 0.5}s`;
+        piece.style.animationDuration = `${2 + Math.random() * 2}s`;
+        piece.style.width = `${6 + Math.random() * 8}px`;
+        piece.style.height = `${6 + Math.random() * 8}px`;
+        document.body.appendChild(piece);
+        setTimeout(() => piece.remove(), 4000);
+      }
+    }
+
     window.handleCheckout = function() {
       const btn = document.getElementById('checkout-btn');
-      btn.innerText = 'Processing...';
+      btn.innerHTML = '<i class="ph ph-circle-notch" style="animation: spin 1s linear infinite;"></i> Processing...';
       btn.disabled = true;
-      
+
+      // Add spin animation
+      const styleEl = document.createElement('style');
+      styleEl.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+      document.head.appendChild(styleEl);
+
       setTimeout(() => {
         const cartItems = cartManager.getCart();
         if (cartItems.length === 0) return;
-        
-        const shopId = cartItems[0].menuItem.shopId; // Assume single shop for prototype
+
+        const shopId = cartItems[0].menuItem.shopId;
         const totalAmount = cartManager.getTotal() + 5;
-        
-        // Save to global orders via OrderManager
         const order = orderManager.createOrder(MOCK_USER.id, shopId, cartItems, totalAmount);
-        
-        // Deduct from mock user (in memory only, resets on reload but fine for demo flow)
         MOCK_USER.walletBalance -= totalAmount;
-        
         cartManager.clearCart();
-        
+
+        spawnConfetti();
+
         document.getElementById('app-root').innerHTML = `
-          <div class="main-content flex-col align-center justify-center" style="height: 100vh; text-align: center;">
-            <div class="badge success mb-md" style="font-size: 1rem; padding: 10px 20px;">Order Placed!</div>
-            <h2 class="text-title mb-md">Scan at Counter</h2>
-            <div style="background: white; padding: 20px; border-radius: 16px; display: inline-block; margin-bottom: 20px;">
-               <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #000 25%, transparent 25%) -50px 0, linear-gradient(225deg, #000 25%, transparent 25%) -50px 0, linear-gradient(315deg, #000 25%, transparent 25%), linear-gradient(45deg, #000 25%, transparent 25%); background-size: 20px 20px; background-color: #fff;"></div>
+          <div class="main-content flex-col" style="align-items: center; justify-content: center; min-height: 100vh; text-align: center; padding: 32px;">
+            <div class="success-check">
+              <i class="ph-bold ph-check" style="font-size: 3rem; color: white;"></i>
             </div>
-            <p class="font-bold text-body mb-sm">${order.qrToken}</p>
-            <p class="text-small text-secondary mb-lg">Order ID: ${order.id}</p>
-            <a href="index.html" class="btn-primary">Start New Order</a>
+            <h2 class="text-title mb-sm animate-slide-up" style="animation-delay: 0.3s; opacity: 0;">Order Confirmed!</h2>
+            <p class="text-muted mb-lg animate-slide-up" style="animation-delay: 0.5s; opacity: 0;">Your food is being prepared</p>
+            
+            <div class="card w-full mb-lg animate-slide-up" style="animation-delay: 0.6s; opacity: 0; max-width: 340px; box-shadow: var(--shadow-lg);">
+              <p class="text-small text-muted mb-sm">Show this QR at the counter</p>
+              <div style="background: white; padding: 20px; border-radius: var(--radius-sm); display: inline-block; margin-bottom: 16px;">
+                <div style="width: 150px; height: 150px; margin: 0 auto; background: repeating-conic-gradient(#000 0% 25%, #fff 0% 50%) 50% / 15px 15px;"></div>
+              </div>
+              <p class="font-bold text-body mb-sm" style="letter-spacing: 2px;">${order.qrToken}</p>
+              <p class="text-small text-muted">Order ID: ${order.id}</p>
+            </div>
+
+            <a href="index.html" class="btn-primary animate-slide-up" style="animation-delay: 0.8s; opacity: 0;">
+              <i class="ph ph-house"></i> Back to Home
+            </a>
           </div>
-          ${getNavHtml()}
         `;
-      }, 1500);
+      }, 1800);
     };
+
+    document.addEventListener('DOMContentLoaded', renderCart);
   </script>
 </body>
 </html>
