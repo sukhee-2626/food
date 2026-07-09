@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniBite | Vendor Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Desktop layout overrides for dashboards */
+    @media (min-width: 768px) {
+      .app-container { max-width: 1000px; }
+      .dashboard-grid { display: grid; grid-template-columns: 300px 1fr; gap: var(--spacing-lg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="p-md" style="border-bottom: 1px solid var(--border-color);">
+      <div class="flex-row justify-between align-center">
+        <div>
+          <h1 class="text-title" style="margin: 0;">Vendor Dashboard</h1>
+          <p class="text-small">Logged in as: <strong id="shop-name-display">SnackJack</strong></p>
+        </div>
+        <a href="index.html" class="btn-secondary" style="padding: 8px 16px;">Exit to App</a>
+      </div>
+    </header>
+
+    <div class="main-content dashboard-grid" style="padding-bottom: var(--spacing-xl);">
+      <aside class="mb-lg">
+        <div class="card bg-secondary">
+          <h2 class="text-body font-bold mb-md">Shop Controls</h2>
+          <div class="flex-row justify-between align-center mb-md">
+            <span class="text-small">Accepting Orders</span>
+            <span class="badge success">ONLINE</span>
+          </div>
+          <div class="flex-col gap-sm">
+            <button class="btn-secondary" onclick="renderOrders('Placed')">New Orders</button>
+            <button class="btn-secondary" onclick="renderOrders('Preparing')">Preparing</button>
+            <button class="btn-secondary" onclick="renderOrders('Ready')">Ready for Pickup</button>
+            <button class="btn-secondary" onclick="renderOrders('Collected')">Completed History</button>
+          </div>
+        </div>
+      </aside>
+
+      <section>
+        <div class="flex-row justify-between align-center mb-md">
+          <h2 class="text-title" id="current-view-title">New Orders</h2>
+          <button class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="refreshData()">Refresh</button>
+        </div>
+        
+        <div id="orders-container" class="flex-col gap-md">
+          <!-- Orders injected here -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    const CURRENT_SHOP_ID = "shop_1"; // Hardcoded to SnackJack for demo
+    let currentFilter = 'Placed';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('shop-name-display').innerText = getShopById(CURRENT_SHOP_ID).name;
+      renderOrders(currentFilter);
+      
+      // Auto refresh every 5 seconds to simulate real-time
+      setInterval(() => {
+        renderOrders(currentFilter);
+      }, 5000);
+    });
+
+    window.refreshData = () => renderOrders(currentFilter);
+
+    window.renderOrders = (statusFilter) => {
+      currentFilter = statusFilter;
+      document.getElementById('current-view-title').innerText = 
+        statusFilter === 'Placed' ? 'New Orders' :
+        statusFilter === 'Preparing' ? 'In Kitchen' :
+        statusFilter === 'Ready' ? 'Waiting for Pickup' : 'Order History';
+
+      const container = document.getElementById('orders-container');
+      const allOrders = orderManager.getOrdersByShop(CURRENT_SHOP_ID);
+      const filteredOrders = allOrders.filter(o => o.status === statusFilter).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      if (filteredOrders.length === 0) {
+        container.innerHTML = `<div class="card text-center p-lg"><p class="text-secondary">No orders found in this queue.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = filteredOrders.map(order => {
+        const timeAgo = Math.round((new Date() - new Date(order.createdAt)) / 60000);
+        let actionBtn = '';
+        
+        if (order.status === 'Placed') {
+          actionBtn = `<button class="btn-primary w-full mt-sm" onclick="updateStatus('${order.id}', 'Preparing')">Accept & Start Cooking</button>`;
+        } else if (order.status === 'Preparing') {
+          actionBtn = `<button class="btn-primary w-full mt-sm" style="background: var(--warning-color);" onclick="updateStatus('${order.id}', 'Ready')">Mark as Ready</button>`;
+        } else if (order.status === 'Ready') {
+          actionBtn = `
+            <div class="p-sm mb-sm text-center" style="background: #f0f4f8; border-radius: 8px;">
+              <p class="text-small">Student will scan QR to collect</p>
+              <p class="font-bold">${order.qrToken}</p>
+            </div>
+            <button class="btn-primary w-full mt-sm" style="background: var(--success-color);" onclick="updateStatus('${order.id}', 'Collected')">Verify QR & Complete</button>
+          `;
+        }
+
+        const itemsList = order.items.map(i => `<div class="flex-row justify-between text-small"><span>${i.quantity}x ${i.menuItem.name}</span><span>₹${i.menuItem.price * i.quantity}</span></div>`).join('');
+
+        return `
+          <div class="card animate-fade-in">
+            <div class="flex-row justify-between align-center mb-sm">
+              <span class="font-bold text-body">#${order.id.slice(0, 8)}</span>
+              <span class="text-small text-secondary">${timeAgo === 0 ? 'Just now' : timeAgo + ' min ago'}</span>
+            </div>
+            <hr style="border:none; border-top: 1px solid var(--border-color); margin: 8px 0;" />
+            <div class="flex-col gap-sm mb-md">
+              ${itemsList}
+            </div>
+            <div class="flex-row justify-between font-bold mb-md">
+              <span>Total</span>
+              <span>₹${order.totalAmount}</span>
+            </div>
+            ${actionBtn}
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.updateStatus = (orderId, newStatus) => {
+      orderManager.updateOrderStatus(orderId, newStatus);
+      renderOrders(currentFilter);
+    };
+  </script>
+</body>
+</html>

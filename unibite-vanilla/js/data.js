@@ -68,3 +68,51 @@ function getShopById(id) {
 function getMenuItemsByShopId(shopId) {
   return MOCK_MENU_ITEMS.filter(m => m.shopId === shopId);
 }
+
+// --- ORDER MANAGEMENT ---
+class OrderManager {
+  constructor() {
+    this.storageKey = 'unibite_orders';
+  }
+
+  getOrders() {
+    const orders = localStorage.getItem(this.storageKey);
+    return orders ? JSON.parse(orders) : [];
+  }
+
+  saveOrders(orders) {
+    localStorage.setItem(this.storageKey, JSON.stringify(orders));
+  }
+
+  createOrder(userId, shopId, items, totalAmount) {
+    const orders = this.getOrders();
+    const newOrder = {
+      id: `ord_${Math.random().toString(36).substr(2, 9)}`,
+      qrToken: `QR_${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      userId,
+      shopId,
+      items,
+      totalAmount,
+      status: 'Placed', // Placed, Preparing, Ready, Collected
+      createdAt: new Date().toISOString()
+    };
+    orders.push(newOrder);
+    this.saveOrders(orders);
+    return newOrder;
+  }
+
+  updateOrderStatus(orderId, newStatus) {
+    const orders = this.getOrders();
+    const orderIndex = orders.findIndex(o => o.id === orderId);
+    if (orderIndex > -1) {
+      orders[orderIndex].status = newStatus;
+      this.saveOrders(orders);
+    }
+  }
+
+  getOrdersByShop(shopId) {
+    return this.getOrders().filter(o => o.shopId === shopId);
+  }
+}
+
+const orderManager = new OrderManager();

@@ -123,8 +123,17 @@
       btn.disabled = true;
       
       setTimeout(() => {
-        const mockQR = `QR_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-        const mockOrderId = `ord_${Math.random().toString(36).substr(2, 9)}`;
+        const cartItems = cartManager.getCart();
+        if (cartItems.length === 0) return;
+        
+        const shopId = cartItems[0].menuItem.shopId; // Assume single shop for prototype
+        const totalAmount = cartManager.getTotal() + 5;
+        
+        // Save to global orders via OrderManager
+        const order = orderManager.createOrder(MOCK_USER.id, shopId, cartItems, totalAmount);
+        
+        // Deduct from mock user (in memory only, resets on reload but fine for demo flow)
+        MOCK_USER.walletBalance -= totalAmount;
         
         cartManager.clearCart();
         
@@ -133,11 +142,10 @@
             <div class="badge success mb-md" style="font-size: 1rem; padding: 10px 20px;">Order Placed!</div>
             <h2 class="text-title mb-md">Scan at Counter</h2>
             <div style="background: white; padding: 20px; border-radius: 16px; display: inline-block; margin-bottom: 20px;">
-               <!-- Mock QR Code visually -->
                <div style="width: 200px; height: 200px; background: linear-gradient(135deg, #000 25%, transparent 25%) -50px 0, linear-gradient(225deg, #000 25%, transparent 25%) -50px 0, linear-gradient(315deg, #000 25%, transparent 25%), linear-gradient(45deg, #000 25%, transparent 25%); background-size: 20px 20px; background-color: #fff;"></div>
             </div>
-            <p class="font-bold text-body mb-sm">${mockQR}</p>
-            <p class="text-small text-secondary mb-lg">Order ID: ${mockOrderId}</p>
+            <p class="font-bold text-body mb-sm">${order.qrToken}</p>
+            <p class="text-small text-secondary mb-lg">Order ID: ${order.id}</p>
             <a href="index.html" class="btn-primary">Start New Order</a>
           </div>
           ${getNavHtml()}

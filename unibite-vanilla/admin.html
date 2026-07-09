@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UniBite | Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    @media (min-width: 768px) {
+      .app-container { max-width: 1200px; }
+      .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); }
+    }
+    .stat-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: var(--spacing-lg);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--accent-color);
+      margin-top: var(--spacing-sm);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="p-md" style="border-bottom: 1px solid var(--border-color); background: var(--bg-secondary);">
+      <div class="flex-row justify-between align-center">
+        <div>
+          <h1 class="text-title" style="margin: 0; color: #1a202c;">Campus Super-Admin</h1>
+          <p class="text-small">Overview across all canteens</p>
+        </div>
+        <a href="index.html" class="btn-secondary" style="padding: 8px 16px;">Back to App</a>
+      </div>
+    </header>
+
+    <div class="main-content" style="padding-bottom: var(--spacing-xl);">
+      
+      <div class="flex-row justify-between align-center mb-md mt-sm">
+        <h2 class="text-body font-bold">Today's Overview</h2>
+        <button class="btn-primary" style="padding: 6px 12px; font-size: 0.8rem;" onclick="renderAdminStats()">Refresh Data</button>
+      </div>
+
+      <div class="dashboard-grid mb-lg">
+        <div class="stat-card">
+          <p class="text-small text-secondary font-bold text-uppercase">Total Orders</p>
+          <div class="stat-value" id="stat-total-orders">0</div>
+        </div>
+        <div class="stat-card">
+          <p class="text-small text-secondary font-bold text-uppercase">Total Revenue</p>
+          <div class="stat-value" id="stat-total-revenue">₹0</div>
+        </div>
+        <div class="stat-card">
+          <p class="text-small text-secondary font-bold text-uppercase">Active Shops</p>
+          <div class="stat-value" id="stat-active-shops">0</div>
+        </div>
+      </div>
+
+      <h2 class="text-body font-bold mb-md">All Campus Shops</h2>
+      <div id="shops-list-container" class="flex-col gap-md mb-lg">
+        <!-- Shops injected here -->
+      </div>
+
+      <h2 class="text-body font-bold mb-md">Recent Transactions</h2>
+      <div class="card bg-secondary" style="padding: 0; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="background: var(--bg-primary); border-bottom: 1px solid var(--border-color);">
+              <th class="p-sm text-small">Order ID</th>
+              <th class="p-sm text-small">Shop</th>
+              <th class="p-sm text-small">User</th>
+              <th class="p-sm text-small">Amount</th>
+              <th class="p-sm text-small">Status</th>
+            </tr>
+          </thead>
+          <tbody id="transactions-container">
+            <!-- Transactions injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderAdminStats();
+      setInterval(renderAdminStats, 5000); // Auto-refresh 5s
+    });
+
+    window.renderAdminStats = () => {
+      const allOrders = orderManager.getOrders();
+      const totalRevenue = allOrders.reduce((sum, order) => sum + order.totalAmount, 0);
+      const activeShops = MOCK_SHOPS.filter(s => s.isOpen).length;
+
+      // Update Top Stats
+      document.getElementById('stat-total-orders').innerText = allOrders.length;
+      document.getElementById('stat-total-revenue').innerText = `₹${totalRevenue}`;
+      document.getElementById('stat-active-shops').innerText = `${activeShops} / ${MOCK_SHOPS.length}`;
+
+      // Render Shops
+      document.getElementById('shops-list-container').innerHTML = MOCK_SHOPS.map(shop => {
+        const shopOrders = allOrders.filter(o => o.shopId === shop.id);
+        const shopRev = shopOrders.reduce((s, o) => s + o.totalAmount, 0);
+        return `
+          <div class="card flex-row justify-between align-center">
+            <div>
+              <h3 class="font-bold">${shop.name}</h3>
+              <p class="text-small text-secondary">${shop.type}</p>
+            </div>
+            <div class="text-right">
+              <p class="font-bold">₹${shopRev}</p>
+              <p class="text-small text-secondary">${shopOrders.length} orders</p>
+            </div>
+            ${shop.isOpen ? '<span class="badge success">Online</span>' : '<span class="badge warning">Offline</span>'}
+          </div>
+        `;
+      }).join('');
+
+      // Render Transactions
+      const recentOrders = [...allOrders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 10);
+      
+      if (recentOrders.length === 0) {
+        document.getElementById('transactions-container').innerHTML = `<tr><td colspan="5" class="p-md text-center text-secondary">No transactions yet.</td></tr>`;
+      } else {
+        document.getElementById('transactions-container').innerHTML = recentOrders.map(order => {
+          const shopName = getShopById(order.shopId).name;
+          return `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td class="p-sm text-small font-bold">#${order.id.slice(0, 6)}</td>
+              <td class="p-sm text-small">${shopName}</td>
+              <td class="p-sm text-small">${order.userId}</td>
+              <td class="p-sm text-small">₹${order.totalAmount}</td>
+              <td class="p-sm"><span class="badge" style="font-size:0.6rem;">${order.status}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+    };
+  </script>
+</body>
+</html>
